@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Food Suggestion App</title>
+
+<style>
+* { box-sizing: border-box; font-family: system-ui, sans-serif; }
+body { margin:0; background:#f6f7fb; color:#222; }
+header { background:#111; color:#fff; padding:16px; text-align:center; }
+nav { margin-top:8px; }
+nav button { background:none; border:none; color:#fff; font-size:16px; margin:0 10px; cursor:pointer; }
+
+.container { max-width:900px; margin:auto; padding:20px; }
+.card { background:#fff; border-radius:14px; padding:20px; box-shadow:0 10px 25px rgba(0,0,0,.08); }
+
+button.primary {
+  width:100%; padding:14px; border:none; border-radius:10px;
+  background:#111; color:#fff; font-size:16px; cursor:pointer;
+}
+
+.category { margin-top:20px; }
+.category-title { font-weight:700; font-size:18px; margin-bottom:8px; }
+
+.row {
+  background:#f1f1f1;
+  border-radius:8px;
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+  gap:10px;
+}
+
+.row button {
+  padding:6px 12px;
+  border:none;
+  border-radius:6px;
+  background:#111;
+  color:#fff;
+  cursor:pointer;
+}
+
+.hidden { display:none; }
+
+input, select {
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+.list-item {
+  background:#f1f1f1;
+  padding:10px;
+  border-radius:8px;
+  margin-bottom:8px;
+}
+
+.actions button { margin-right:6px; }
+
+.toast {
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#111;
+  color:#fff;
+  padding:12px 16px;
+  border-radius:10px;
+  opacity:0;
+  transform:translateY(10px);
+  transition:.4s;
+}
+.toast.show { opacity:1; transform:translateY(0); }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Food Suggestion</h1>
+  <nav>
+    <button onclick="showPage('home')">Home</button>
+    <button onclick="showPage('edit')">Edit List</button>
+  </nav>
+</header>
+
+<div class="container">
+
+<!-- HOME -->
+<div id="home" class="card">
+  <button class="primary" onclick="createSuggestion()">Create Food Suggestion</button>
+
+  <div class="category">
+    <div class="category-title">Breakfast</div>
+    <div class="row">
+      <span id="breakfastText">—</span>
+      <button onclick="changeMeal('breakfast')">Change</button>
+    </div>
+  </div>
+
+  <div class="category">
+    <div class="category-title">Lunch & Dinner</div>
+
+    <div class="row">
+      <strong>Pinned:</strong>
+      <span id="pinnedText">—</span>
+      <button onclick="changeMeal('lunchPinned')">Change</button>
+    </div>
+
+    <div class="row">
+      <strong>Food 1:</strong>
+      <span id="food1Text">—</span>
+      <button onclick="changeMeal('lunch1')">Change</button>
+    </div>
+
+    <div class="row">
+      <strong>Food 2:</strong>
+      <span id="food2Text">—</span>
+      <button onclick="changeMeal('lunch2')">Change</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT -->
+<div id="edit" class="card hidden">
+  <h2>Edit Food List</h2>
+
+  <select id="categorySelect">
+    <option value="breakfast">Breakfast</option>
+    <option value="lunchPinned">Lunch & Dinner : Pinned</option>
+    <option value="lunch1">Lunch & Dinner : Food 1</option>
+    <option value="lunch2">Lunch & Dinner : Food 2</option>
+  </select>
+
+  <input id="newItem" placeholder="Add food item">
+  <button class="primary" onclick="addItem()">Add Item</button>
+
+  <h3>Breakfast</h3><div id="breakfastList"></div>
+  <h3>Lunch & Dinner : Pinned</h3><div id="lunchPinnedList"></div>
+  <h3>Lunch & Dinner : Food 1</h3><div id="lunch1List"></div>
+  <h3>Lunch & Dinner : Food 2</h3><div id="lunch2List"></div>
+</div>
+
+</div>
+
+<div id="toast" class="toast">Item added</div>
+
+<script>
+const defaultData = {
+  breakfast:["Poha","Idli Sambar"],
+  lunchPinned:["Rajma Chawal"],
+  lunch1:["Dal Rice"],
+  lunch2:["Paneer Sabzi"]
+};
+
+let foodData = JSON.parse(localStorage.getItem("foodData")) || defaultData;
+const el = id => document.getElementById(id);
+
+function showPage(p){
+  el("home").classList.add("hidden");
+  el("edit").classList.add("hidden");
+  el(p).classList.remove("hidden");
+}
+
+function rand(arr){
+  return arr.length ? arr[Math.floor(Math.random()*arr.length)] : "—";
+}
+
+function createSuggestion(){
+  changeMeal("breakfast");
+  changeMeal("lunchPinned");
+  changeMeal("lunch1");
+  changeMeal("lunch2");
+}
+
+function changeMeal(type){
+  if(type==="breakfast") el("breakfastText").innerText = rand(foodData.breakfast);
+  if(type==="lunchPinned") el("pinnedText").innerText = rand(foodData.lunchPinned);
+  if(type==="lunch1") el("food1Text").innerText = rand(foodData.lunch1);
+  if(type==="lunch2") el("food2Text").innerText = rand(foodData.lunch2);
+}
+
+function save(){
+  localStorage.setItem("foodData", JSON.stringify(foodData));
+  renderLists();
+}
+
+function addItem(){
+  const c = el("categorySelect").value;
+  const v = el("newItem").value.trim();
+  if(!v) return;
+  foodData[c].push(v);
+  el("newItem").value="";
+  save();
+  toast("Item added");
+}
+
+function editItem(c,i){
+  const v = prompt("Edit item", foodData[c][i]);
+  if(!v) return;
+  foodData[c][i]=v;
+  save();
+}
+
+function deleteItem(c,i){
+  foodData[c].splice(i,1);
+  save();
+}
+
+function renderLists(){
+  el("breakfastList").innerHTML="";
+  el("lunchPinnedList").innerHTML="";
+  el("lunch1List").innerHTML="";
+  el("lunch2List").innerHTML="";
+
+  foodData.breakfast.forEach((x,i)=>el("breakfastList").innerHTML+=tpl("breakfast",x,i));
+  foodData.lunchPinned.forEach((x,i)=>el("lunchPinnedList").innerHTML+=tpl("lunchPinned",x,i));
+  foodData.lunch1.forEach((x,i)=>el("lunch1List").innerHTML+=tpl("lunch1",x,i));
+  foodData.lunch2.forEach((x,i)=>el("lunch2List").innerHTML+=tpl("lunch2",x,i));
+}
+
+function tpl(c,x,i){
+  return `<div class='list-item'>${x}
+    <div class='actions'>
+      <button onclick="editItem('${c}',${i})">Edit</button>
+      <button onclick="deleteItem('${c}',${i})">Delete</button>
+    </div>
+  </div>`;
+}
+
+function toast(t){
+  const e = el("toast");
+  e.innerText=t;
+  e.classList.add("show");
+  setTimeout(()=>e.classList.remove("show"),1800);
+}
+
+save();
+</script>
+
+</body>
+</html>
